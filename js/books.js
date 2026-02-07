@@ -1,0 +1,197 @@
+/**
+ * Book data for Chapter & Verse Bookstore
+ */
+const BOOKS = [
+  {
+    id: 1,
+    title: "The Midnight Library",
+    author: "Matt Haig",
+    genre: "fiction",
+    price: 16.99,
+    rating: 4.5,
+    color: "#1a5276",
+    badge: "Staff Pick",
+    featured: true,
+    description: "Between life and death there is a library filled with books of alternate lives."
+  },
+  {
+    id: 2,
+    title: "Project Hail Mary",
+    author: "Andy Weir",
+    genre: "sci-fi",
+    price: 18.99,
+    rating: 4.8,
+    color: "#6c3483",
+    badge: "Bestseller",
+    featured: true,
+    description: "A lone astronaut must save Earth from an extinction-level threat."
+  },
+  {
+    id: 3,
+    title: "Educated",
+    author: "Tara Westover",
+    genre: "non-fiction",
+    price: 15.99,
+    rating: 4.7,
+    color: "#117864",
+    badge: null,
+    featured: true,
+    description: "A memoir of a woman who leaves her survivalist family to earn a PhD from Cambridge."
+  },
+  {
+    id: 4,
+    title: "The Silent Patient",
+    author: "Alex Michaelides",
+    genre: "mystery",
+    price: 14.99,
+    rating: 4.3,
+    color: "#922b21",
+    badge: "Staff Pick",
+    featured: true,
+    description: "A woman shoots her husband and then never speaks again."
+  },
+  {
+    id: 5,
+    title: "Dune",
+    author: "Frank Herbert",
+    genre: "sci-fi",
+    price: 17.99,
+    rating: 4.6,
+    color: "#b7950b",
+    badge: "Classic",
+    featured: false,
+    description: "The sweeping tale of a desert planet and the boy destined to rule it."
+  },
+  {
+    id: 6,
+    title: "Pride and Prejudice",
+    author: "Jane Austen",
+    genre: "classic",
+    price: 9.99,
+    rating: 4.7,
+    color: "#c0392b",
+    badge: null,
+    featured: false,
+    description: "The classic story of Elizabeth Bennet and Mr. Darcy."
+  },
+  {
+    id: 7,
+    title: "Atomic Habits",
+    author: "James Clear",
+    genre: "non-fiction",
+    price: 16.49,
+    rating: 4.8,
+    color: "#2e86c1",
+    badge: "Bestseller",
+    featured: false,
+    description: "Tiny changes, remarkable results. A proven system for building good habits."
+  },
+  {
+    id: 8,
+    title: "The Girl with the Dragon Tattoo",
+    author: "Stieg Larsson",
+    genre: "mystery",
+    price: 13.99,
+    rating: 4.4,
+    color: "#1c2833",
+    badge: null,
+    featured: false,
+    description: "A journalist and a hacker investigate a decades-old disappearance."
+  },
+  {
+    id: 9,
+    title: "1984",
+    author: "George Orwell",
+    genre: "classic",
+    price: 11.99,
+    rating: 4.7,
+    color: "#7d3c98",
+    badge: "Classic",
+    featured: false,
+    description: "Big Brother is watching in this dystopian masterpiece."
+  },
+  {
+    id: 10,
+    title: "Where the Crawdads Sing",
+    author: "Delia Owens",
+    genre: "fiction",
+    price: 15.49,
+    rating: 4.5,
+    color: "#196f3d",
+    badge: null,
+    featured: false,
+    description: "A coming-of-age story set in the marshlands of North Carolina."
+  },
+  {
+    id: 11,
+    title: "The Martian",
+    author: "Andy Weir",
+    genre: "sci-fi",
+    price: 14.99,
+    rating: 4.7,
+    color: "#e74c3c",
+    badge: null,
+    featured: false,
+    description: "An astronaut must survive alone on Mars after being left behind."
+  },
+  {
+    id: 12,
+    title: "Sapiens",
+    author: "Yuval Noah Harari",
+    genre: "non-fiction",
+    price: 18.49,
+    rating: 4.6,
+    color: "#d68910",
+    badge: "Staff Pick",
+    featured: false,
+    description: "A brief history of humankind from the Stone Age to the present."
+  },
+  {
+    id: 13,
+    title: "And Then There Were None",
+    author: "Agatha Christie",
+    genre: "mystery",
+    price: 10.99,
+    rating: 4.6,
+    color: "#283747",
+    badge: "Classic",
+    featured: false,
+    description: "Ten strangers are lured to an island, and one by one they begin to die."
+  },
+  {
+    id: 14,
+    title: "The Great Gatsby",
+    author: "F. Scott Fitzgerald",
+    genre: "classic",
+    price: 9.49,
+    rating: 4.4,
+    color: "#1e8449",
+    badge: null,
+    featured: false,
+    description: "The story of the mysteriously wealthy Jay Gatsby and his obsession."
+  },
+  {
+    id: 15,
+    title: "Klara and the Sun",
+    author: "Kazuo Ishiguro",
+    genre: "fiction",
+    price: 17.49,
+    rating: 4.3,
+    color: "#f39c12",
+    badge: null,
+    featured: false,
+    description: "An Artificial Friend observes the world from a store window."
+  },
+  {
+    id: 16,
+    title: "The Hitchhiker's Guide to the Galaxy",
+    author: "Douglas Adams",
+    genre: "sci-fi",
+    price: 12.99,
+    rating: 4.6,
+    color: "#2980b9",
+    badge: null,
+    featured: false,
+    description: "The answer to life, the universe, and everything is 42."
+  }
+];
