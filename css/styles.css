@@ -667,16 +667,58 @@ ul {
 .catalog-controls {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
   gap: var(--space-md);
   margin-bottom: var(--space-lg);
 }
 
-.filter-group {
+.catalog-controls-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.filter-group,
+.format-group {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-sm);
+}
+
+.format-btn {
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text-light);
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  transition: all var(--transition);
+}
+
+.format-btn:hover,
+.format-btn:focus-visible {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.format-btn.active {
+  background: var(--color-primary);
+  color: var(--color-bg);
+  border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .format-btn {
+  background: var(--color-card);
+  border-color: var(--color-border);
+  color: var(--color-text-light);
+}
+
+[data-theme="dark"] .format-btn.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
 }
 
 .filter-btn {
@@ -762,6 +804,56 @@ ul {
   color: var(--color-text-light);
   padding: var(--space-xl) 0;
   font-size: 1.05rem;
+}
+
+/* --- Catalog Info & Pagination --- */
+.catalog-info {
+  margin-bottom: var(--space-md);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
+}
+
+.pagination-btn {
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-light);
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  transition: all var(--transition);
+}
+
+.pagination-btn:hover:not(:disabled),
+.pagination-btn:focus-visible:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 0.9rem;
+  color: var(--color-text-light);
+  font-weight: 500;
+}
+
+[data-theme="dark"] .pagination-btn {
+  background: var(--color-card);
+  border-color: var(--color-border);
+  color: var(--color-text-light);
 }
 
 /* --- About Section --- */
@@ -1406,6 +1498,10 @@ input:focus-visible {
     align-items: stretch;
   }
 
+  .catalog-controls-left {
+    gap: var(--space-sm);
+  }
+
   .catalog-controls-right {
     flex-direction: column;
   }
@@ -1416,6 +1512,10 @@ input:focus-visible {
 
   .sort-select {
     width: 100%;
+  }
+
+  .pagination {
+    gap: var(--space-sm);
   }
 
   .newsletter-form {
