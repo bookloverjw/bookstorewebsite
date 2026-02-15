@@ -157,9 +157,21 @@
             <button class="filter-btn" data-filter="mystery">Mystery</button>
             <button class="filter-btn" data-filter="classic">Classic</button>
           </div>
-          <div class="search-group">
-            <label for="book-search" class="sr-only">Search books</label>
-            <input type="search" id="book-search" class="search-input" placeholder="Search by title or author..." autocomplete="off">
+          <div class="catalog-controls-right">
+            <div class="sort-group">
+              <label for="book-sort" class="sr-only">Sort books</label>
+              <select id="book-sort" class="sort-select">
+                <option value="rating-desc">Top Rated</option>
+                <option value="title-asc">Title: A&ndash;Z</option>
+                <option value="title-desc">Title: Z&ndash;A</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+              </select>
+            </div>
+            <div class="search-group">
+              <label for="book-search" class="sr-only">Search books</label>
+              <input type="search" id="book-search" class="search-input" placeholder="Search by title or author..." autocomplete="off">
+            </div>
           </div>
         </div>
 

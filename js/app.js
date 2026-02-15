@@ -29,12 +29,14 @@
   let cart = loadCart();
   let activeFilter = 'all';
   let searchQuery = '';
+  let currentSort = 'rating-desc';
 
   // --- DOM References ---
   const featuredGrid = document.querySelector('.book-grid');
   const catalogGrid = document.querySelector('.catalog-grid');
   const filterBtns = document.querySelectorAll('.filter-btn');
   const searchInput = document.getElementById('book-search');
+  const sortSelect = document.getElementById('book-sort');
   const noResults = document.querySelector('.no-results');
   const cartBtn = document.querySelector('.cart-btn');
   const cartCount = document.querySelector('.cart-count');
@@ -124,6 +126,30 @@
     });
   }
 
+  function sortBooks(books, sortKey) {
+    var sorted = books.slice();
+    switch (sortKey) {
+      case 'price-asc':
+        sorted.sort(function (a, b) { return a.price - b.price; });
+        break;
+      case 'price-desc':
+        sorted.sort(function (a, b) { return b.price - a.price; });
+        break;
+      case 'title-asc':
+        sorted.sort(function (a, b) { return a.title.localeCompare(b.title); });
+        break;
+      case 'title-desc':
+        sorted.sort(function (a, b) { return b.title.localeCompare(a.title); });
+        break;
+      case 'rating-desc':
+        sorted.sort(function (a, b) { return b.rating - a.rating; });
+        break;
+      default:
+        break;
+    }
+    return sorted;
+  }
+
   function renderCatalog() {
     let filtered = BOOKS;
 
@@ -138,6 +164,8 @@
         b.author.toLowerCase().includes(q)
       );
     }
+
+    filtered = sortBooks(filtered, currentSort);
 
     catalogGrid.innerHTML = '';
 
@@ -388,6 +416,12 @@
       activeFilter = this.dataset.filter;
       renderCatalog();
     });
+  });
+
+  // Sort
+  sortSelect.addEventListener('change', function () {
+    currentSort = this.value;
+    renderCatalog();
   });
 
   // Search
