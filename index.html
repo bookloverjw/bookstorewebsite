@@ -149,13 +149,20 @@
         </div>
 
         <div class="catalog-controls">
-          <div class="filter-group" role="group" aria-label="Filter books by genre">
-            <button class="filter-btn active" data-filter="all">All</button>
-            <button class="filter-btn" data-filter="fiction">Fiction</button>
-            <button class="filter-btn" data-filter="non-fiction">Non-Fiction</button>
-            <button class="filter-btn" data-filter="sci-fi">Sci-Fi</button>
-            <button class="filter-btn" data-filter="mystery">Mystery</button>
-            <button class="filter-btn" data-filter="classic">Classic</button>
+          <div class="catalog-controls-left">
+            <div class="filter-group" role="group" aria-label="Filter books by genre">
+              <button class="filter-btn active" data-filter="all">All</button>
+              <button class="filter-btn" data-filter="fiction">Fiction</button>
+              <button class="filter-btn" data-filter="non-fiction">Non-Fiction</button>
+              <button class="filter-btn" data-filter="sci-fi">Sci-Fi</button>
+              <button class="filter-btn" data-filter="mystery">Mystery</button>
+              <button class="filter-btn" data-filter="classic">Classic</button>
+            </div>
+            <div class="format-group" role="group" aria-label="Filter books by format">
+              <button class="format-btn active" data-format="all">All Formats</button>
+              <button class="format-btn" data-format="hardcover">Hardcover</button>
+              <button class="format-btn" data-format="paperback">Paperback</button>
+            </div>
           </div>
           <div class="catalog-controls-right">
             <div class="sort-group">
@@ -170,6 +177,14 @@
                 <option value="price-desc">Price: High to Low</option>
               </select>
             </div>
+            <div class="per-page-group">
+              <label for="per-page" class="sr-only">Books per page</label>
+              <select id="per-page" class="sort-select">
+                <option value="8">8 per page</option>
+                <option value="16">16 per page</option>
+                <option value="all">Show all</option>
+              </select>
+            </div>
             <div class="search-group">
               <label for="book-search" class="sr-only">Search books</label>
               <input type="search" id="book-search" class="search-input" placeholder="Search by title or author..." autocomplete="off">
@@ -177,11 +192,21 @@
           </div>
         </div>
 
+        <div class="catalog-info" aria-live="polite">
+          <span class="catalog-showing"></span>
+        </div>
+
         <div class="catalog-grid" role="list" aria-live="polite">
           <!-- Populated by JS -->
         </div>
 
         <p class="no-results" hidden>No books match your search. Try a different term.</p>
+
+        <nav class="pagination" aria-label="Catalog pagination">
+          <button class="pagination-btn pagination-prev" aria-label="Previous page" disabled>&laquo; Prev</button>
+          <span class="pagination-info"></span>
+          <button class="pagination-btn pagination-next" aria-label="Next page" disabled>Next &raquo;</button>
+        </nav>
       </div>
     </section>
 

@@ -102,16 +102,26 @@
   // --- State ---
   let cart = loadCart();
   let activeFilter = 'all';
+  let activeFormat = 'all';
   let activeSort = 'default';
   let searchQuery = '';
+  let currentPage = 1;
+  let perPage = 8;
 
   // --- DOM References ---
   const featuredGrid = document.querySelector('.book-grid');
   const catalogGrid = document.querySelector('.catalog-grid');
   const filterBtns = document.querySelectorAll('.filter-btn');
+  const formatBtns = document.querySelectorAll('.format-btn');
   const searchInput = document.getElementById('book-search');
   const sortSelect = document.getElementById('book-sort');
+  const perPageSelect = document.getElementById('per-page');
   const noResults = document.querySelector('.no-results');
+  const catalogShowing = document.querySelector('.catalog-showing');
+  const paginationNav = document.querySelector('.pagination');
+  const paginationPrev = document.querySelector('.pagination-prev');
+  const paginationNext = document.querySelector('.pagination-next');
+  const paginationInfo = document.querySelector('.pagination-info');
   const cartBtn = document.querySelector('.cart-btn');
   const cartCount = document.querySelector('.cart-count');
   const cartSidebar = document.querySelector('.cart-sidebar');
@@ -224,11 +234,15 @@
     });
   }
 
-  function renderCatalog() {
+  function getFilteredBooks() {
     let filtered = filterExpiredLimitedPreorders(BOOKS);
 
     if (activeFilter !== 'all') {
       filtered = filtered.filter(b => b.genre === activeFilter);
+    }
+
+    if (activeFormat !== 'all') {
+      filtered = filtered.filter(b => b.format === activeFormat);
     }
 
     if (searchQuery) {
@@ -239,17 +253,58 @@
       );
     }
 
-    filtered = sortBooks(filtered, activeSort);
+    return sortBooks(filtered, activeSort);
+  }
+
+  function renderCatalog() {
+    var filtered = getFilteredBooks();
+    var totalFiltered = filtered.length;
 
     catalogGrid.innerHTML = '';
 
-    if (filtered.length === 0) {
+    if (totalFiltered === 0) {
       noResults.hidden = false;
+      catalogShowing.textContent = '';
+      paginationNav.hidden = true;
     } else {
       noResults.hidden = true;
-      filtered.forEach(book => {
+
+      var totalPages;
+      var pageItems;
+      if (perPage === 'all' || perPage >= totalFiltered) {
+        totalPages = 1;
+        currentPage = 1;
+        pageItems = filtered;
+      } else {
+        totalPages = Math.ceil(totalFiltered / perPage);
+        if (currentPage > totalPages) currentPage = totalPages;
+        var start = (currentPage - 1) * perPage;
+        var end = start + perPage;
+        pageItems = filtered.slice(start, end);
+      }
+
+      pageItems.forEach(function (book) {
         catalogGrid.appendChild(createBookCard(book));
       });
+
+      // Update "Showing X-Y of Z" text
+      if (totalPages > 1) {
+        var startNum = (currentPage - 1) * perPage + 1;
+        var endNum = Math.min(currentPage * perPage, totalFiltered);
+        catalogShowing.textContent = 'Showing ' + startNum + '\u2013' + endNum + ' of ' + totalFiltered + ' books';
+      } else {
+        catalogShowing.textContent = 'Showing ' + totalFiltered + ' book' + (totalFiltered !== 1 ? 's' : '');
+      }
+
+      // Update pagination controls
+      if (totalPages > 1) {
+        paginationNav.hidden = false;
+        paginationInfo.textContent = 'Page ' + currentPage + ' of ' + totalPages;
+        paginationPrev.disabled = currentPage <= 1;
+        paginationNext.disabled = currentPage >= totalPages;
+      } else {
+        paginationNav.hidden = true;
+      }
     }
   }
 
@@ -525,12 +580,24 @@
     if (e.target === modalOverlay) closeModal();
   });
 
-  // Filter buttons
+  // Filter buttons (genre)
   filterBtns.forEach(btn => {
     btn.addEventListener('click', function () {
       filterBtns.forEach(b => b.classList.remove('active'));
       this.classList.add('active');
       activeFilter = this.dataset.filter;
+      currentPage = 1;
+      renderCatalog();
+    });
+  });
+
+  // Format filter buttons
+  formatBtns.forEach(btn => {
+    btn.addEventListener('click', function () {
+      formatBtns.forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      activeFormat = this.dataset.format;
+      currentPage = 1;
       renderCatalog();
     });
   });
@@ -538,8 +605,32 @@
   // Sort dropdown
   sortSelect.addEventListener('change', function () {
     activeSort = this.value;
+    currentPage = 1;
     renderCatalog();
   });
+
+  // Per-page
+  perPageSelect.addEventListener('change', function () {
+    perPage = this.value === 'all' ? 'all' : parseInt(this.value, 10);
+    currentPage = 1;
+    renderCatalog();
+  });
+
+  // Pagination
+  paginationPrev.addEventListener('click', function () {
+    if (currentPage > 1) {
+      currentPage--;
+      renderCatalog();
+      document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+
+  paginationNext.addEventListener('click', function () {
+    currentPage++;
+    renderCatalog();
+    document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' });
+  });
+
 
   // Search
   let searchTimeout;
@@ -547,6 +638,7 @@
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       searchQuery = this.value.trim();
+      currentPage = 1;
       renderCatalog();
     }, 250);
   });

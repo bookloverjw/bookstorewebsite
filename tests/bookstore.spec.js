@@ -32,6 +32,8 @@ test.describe('Page Load & Layout', () => {
     await page.goto('/');
     const catalog = page.locator('#catalog');
     await expect(catalog).toBeVisible();
+    // Default is 8 per page; select "Show all" to see all 16
+    await page.selectOption('#per-page', 'all');
     const cards = catalog.locator('.book-card');
     await expect(cards).toHaveCount(16);
   });
@@ -64,6 +66,7 @@ test.describe('Genre Filtering', () => {
 
   test('shows all books when "All" filter is clicked', async ({ page }) => {
     await page.goto('/');
+    await page.selectOption('#per-page', 'all');
     await page.click('[data-filter="mystery"]');
     const filteredCount = await page.locator('#catalog .book-card').count();
     expect(filteredCount).toBeLessThan(16);
@@ -110,6 +113,7 @@ test.describe('Search', () => {
 
   test('clearing search shows all books again', async ({ page }) => {
     await page.goto('/');
+    await page.selectOption('#per-page', 'all');
     await page.fill('#book-search', 'Midnight');
     await page.waitForTimeout(300);
     await expect(page.locator('#catalog .book-card')).toHaveCount(1);
