@@ -25,9 +25,84 @@
     }
   }
 
+  // --- Sorting Helpers ---
+
+  function sortKeyForTitle(title) {
+    return title.replace(/^(the|a|an)\s+/i, '').toLowerCase();
+  }
+
+  function getBookStatus(book) {
+    if (book.status === 'Preorder' && book.isLimitedPreorder && book.preorderCutoffDate) {
+      var cutoff = new Date(book.preorderCutoffDate);
+      if (new Date() > cutoff) return 'Preorder Closed';
+    }
+    return book.status || 'In Stock';
+  }
+
+  function filterExpiredLimitedPreorders(books) {
+    var now = new Date();
+    return books.filter(function (book) {
+      if (!book.isLimitedPreorder || !book.releaseDate) return true;
+      if (getBookStatus(book) === 'Preorder Closed' && new Date(book.releaseDate) <= now) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function sortBooks(books, sortBy) {
+    var sorted = books.slice();
+    switch (sortBy) {
+      case 'alphabetical':
+        sorted.sort(function (a, b) {
+          return sortKeyForTitle(a.title).localeCompare(sortKeyForTitle(b.title));
+        });
+        break;
+      case 'author':
+        sorted.sort(function (a, b) {
+          var cmp = (a.authorLast || '').toLowerCase().localeCompare((b.authorLast || '').toLowerCase());
+          if (cmp !== 0) return cmp;
+          return sortKeyForTitle(a.title).localeCompare(sortKeyForTitle(b.title));
+        });
+        break;
+      case 'newest':
+        sorted.sort(function (a, b) {
+          var cmp = parseInt(b.published, 10) - parseInt(a.published, 10);
+          if (cmp !== 0) return cmp;
+          return sortKeyForTitle(a.title).localeCompare(sortKeyForTitle(b.title));
+        });
+        break;
+      case 'bestseller':
+        sorted.sort(function (a, b) {
+          var cmp = b.rating - a.rating;
+          if (cmp !== 0) return cmp;
+          return sortKeyForTitle(a.title).localeCompare(sortKeyForTitle(b.title));
+        });
+        break;
+      case 'price-asc':
+        sorted.sort(function (a, b) {
+          var cmp = a.price - b.price;
+          if (cmp !== 0) return cmp;
+          return sortKeyForTitle(a.title).localeCompare(sortKeyForTitle(b.title));
+        });
+        break;
+      case 'price-desc':
+        sorted.sort(function (a, b) {
+          var cmp = b.price - a.price;
+          if (cmp !== 0) return cmp;
+          return sortKeyForTitle(a.title).localeCompare(sortKeyForTitle(b.title));
+        });
+        break;
+      default:
+        break;
+    }
+    return sorted;
+  }
+
   // --- State ---
   let cart = loadCart();
   let activeFilter = 'all';
+  let activeSort = 'default';
   let searchQuery = '';
 
   // --- DOM References ---
@@ -35,6 +110,7 @@
   const catalogGrid = document.querySelector('.catalog-grid');
   const filterBtns = document.querySelectorAll('.filter-btn');
   const searchInput = document.getElementById('book-search');
+  const sortSelect = document.getElementById('book-sort');
   const noResults = document.querySelector('.no-results');
   const cartBtn = document.querySelector('.cart-btn');
   const cartCount = document.querySelector('.cart-count');
@@ -86,6 +162,16 @@
     return stars + ` (${rating})`;
   }
 
+  function getStatusBadgeClass(status) {
+    switch (status) {
+      case 'In Stock': return 'status-in-stock';
+      case 'Low Stock': return 'status-low-stock';
+      case 'Preorder': return 'status-preorder';
+      case 'Preorder Closed': return 'status-preorder-closed';
+      default: return 'status-in-stock';
+    }
+  }
+
   function createBookCard(book) {
     const card = document.createElement('div');
     card.className = 'book-card';
@@ -95,9 +181,23 @@
     card.dataset.bookId = book.id;
     card.style.animationDelay = `${Math.random() * 0.3}s`;
 
+    const status = getBookStatus(book);
+    const statusHtml = status !== 'In Stock'
+      ? `<span class="book-status ${getStatusBadgeClass(status)}">${status}</span>`
+      : '';
+
+    const isPreorderClosed = status === 'Preorder Closed';
+    const addBtnHtml = isPreorderClosed
+      ? `<button class="add-to-cart add-to-cart--disabled" disabled aria-label="Preorder closed for ${book.title}">Preorder Closed</button>`
+      : status === 'Preorder'
+        ? `<button class="add-to-cart add-to-cart--preorder" data-id="${book.id}" aria-label="Preorder ${book.title}">Preorder</button>`
+        : `<button class="add-to-cart" data-id="${book.id}" aria-label="Add ${book.title} to cart">Add to Cart</button>`;
+
     card.innerHTML = `
       <div class="book-cover" style="background-color: ${book.color}">
         ${book.badge ? `<span class="book-badge">${book.badge}</span>` : ''}
+        ${statusHtml}
+        ${book.cover ? `<img src="${book.cover}" alt="${book.title}" class="book-cover-img">` : ''}
       </div>
       <div class="book-info">
         <span class="book-genre">${book.genre}</span>
@@ -106,7 +206,7 @@
         <div class="book-rating" aria-label="Rating: ${book.rating} out of 5">${createStars(book.rating)}</div>
         <div class="book-bottom">
           <span class="book-price">$${book.price.toFixed(2)}</span>
-          <button class="add-to-cart" data-id="${book.id}" aria-label="Add ${book.title} to cart">Add to Cart</button>
+          ${addBtnHtml}
         </div>
       </div>
     `;
@@ -125,7 +225,7 @@
   }
 
   function renderCatalog() {
-    let filtered = BOOKS;
+    let filtered = filterExpiredLimitedPreorders(BOOKS);
 
     if (activeFilter !== 'all') {
       filtered = filtered.filter(b => b.genre === activeFilter);
@@ -138,6 +238,8 @@
         b.author.toLowerCase().includes(q)
       );
     }
+
+    filtered = sortBooks(filtered, activeSort);
 
     catalogGrid.innerHTML = '';
 
@@ -208,10 +310,15 @@
     const book = BOOKS.find(b => b.id === bookId);
     if (!book) return;
 
+    const status = getBookStatus(book);
+    if (status === 'Preorder Closed') return;
+
     cart.push({ id: book.id, title: book.title, price: book.price, color: book.color });
     saveCart();
     renderCart();
-    showToast(`"${book.title}" added to cart`);
+
+    const verb = status === 'Preorder' ? 'preordered' : 'added to cart';
+    showToast(`"${book.title}" ${verb}`);
   }
 
   function removeFromCart(bookId) {
@@ -249,6 +356,8 @@
     const book = BOOKS.find(b => b.id === bookId);
     if (!book) return;
 
+    const status = getBookStatus(book);
+
     document.getElementById('modal-cover').style.backgroundColor = book.color;
     document.getElementById('modal-genre').textContent = book.genre;
     document.getElementById('modal-title').textContent = book.title;
@@ -265,11 +374,45 @@
       <span><strong>${book.isbn}</strong> ISBN</span>
     `;
 
+    // Status info
+    const statusEl = document.getElementById('modal-status');
+    if (status === 'In Stock') {
+      statusEl.innerHTML = '';
+      statusEl.hidden = true;
+    } else {
+      statusEl.hidden = false;
+      let statusContent = `<span class="modal-status-badge ${getStatusBadgeClass(status)}">${status}</span>`;
+      if (status === 'Preorder' && book.isLimitedPreorder && book.preorderCutoffDate) {
+        var cutoffDate = new Date(book.preorderCutoffDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+        statusContent += `<span class="modal-status-detail">Preorder by ${cutoffDate}</span>`;
+      }
+      if (status === 'Preorder Closed') {
+        statusContent += `<span class="modal-status-detail">The preorder window for this edition has ended.</span>`;
+        if (book.releaseDate) {
+          statusContent += `<span class="modal-status-detail">Releases on ${book.releaseDate}.</span>`;
+        }
+      }
+      statusEl.innerHTML = statusContent;
+    }
+
     // Add to cart button
     const modalAddBtn = document.getElementById('modal-add-to-cart');
-    modalAddBtn.onclick = function () {
-      addToCart(book.id);
-    };
+    if (status === 'Preorder Closed') {
+      modalAddBtn.textContent = 'Preorder Closed';
+      modalAddBtn.disabled = true;
+      modalAddBtn.classList.add('btn-disabled');
+      modalAddBtn.onclick = null;
+    } else if (status === 'Preorder') {
+      modalAddBtn.textContent = 'Preorder';
+      modalAddBtn.disabled = false;
+      modalAddBtn.classList.remove('btn-disabled');
+      modalAddBtn.onclick = function () { addToCart(book.id); };
+    } else {
+      modalAddBtn.textContent = 'Add to Cart';
+      modalAddBtn.disabled = false;
+      modalAddBtn.classList.remove('btn-disabled');
+      modalAddBtn.onclick = function () { addToCart(book.id); };
+    }
 
     // Reviews
     const reviewsEl = document.getElementById('modal-reviews');
@@ -291,7 +434,6 @@
 
     // Related books (same genre, different book)
     const relatedEl = document.getElementById('modal-related');
-    const relatedGrid = relatedEl.querySelector('.modal-related-grid');
     const related = BOOKS.filter(b => b.genre === book.genre && b.id !== book.id).slice(0, 4);
     relatedEl.innerHTML = '<h3>You Might Also Like</h3><div class="modal-related-grid"></div>';
     const grid = relatedEl.querySelector('.modal-related-grid');
@@ -304,7 +446,9 @@
       card.setAttribute('aria-label', `View ${rel.title}`);
       card.dataset.bookId = rel.id;
       card.innerHTML = `
-        <div class="related-cover" style="background-color: ${rel.color}"></div>
+        <div class="related-cover" style="background-color: ${rel.color}">
+          ${rel.cover ? `<img src="${rel.cover}" alt="${rel.title}" class="related-cover-img">` : ''}
+        </div>
         <div class="related-title">${rel.title}</div>
         <div class="related-author">${rel.author}</div>
       `;
@@ -341,6 +485,7 @@
     const addBtn = e.target.closest('.add-to-cart');
     if (addBtn) {
       e.stopPropagation();
+      if (addBtn.disabled) return;
       const id = parseInt(addBtn.dataset.id, 10);
       addToCart(id);
       return;
@@ -388,6 +533,12 @@
       activeFilter = this.dataset.filter;
       renderCatalog();
     });
+  });
+
+  // Sort dropdown
+  sortSelect.addEventListener('change', function () {
+    activeSort = this.value;
+    renderCatalog();
   });
 
   // Search
