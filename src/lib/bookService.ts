@@ -159,10 +159,12 @@ export async function getBooks(options?: BookQueryOptions): Promise<Book[]> {
     // Sorts that require client-side ordering use a separate path:
     //   best-selling  – needs order_items join
     //   alphabetical  – needs article stripping ("The", "A", "An")
+    //   author        – needs last-name extraction fallback when author_last is NULL
+    //   newest        – needs created_at fallback when publication_date is NULL
     if (sortBy === 'best-selling') {
       return getBestSellingBooks(options);
     }
-    if (sortBy === 'alphabetical') {
+    if (sortBy === 'alphabetical' || sortBy === 'author' || sortBy === 'newest') {
       return getClientSortedBooks(options);
     }
 
@@ -172,18 +174,8 @@ export async function getBooks(options?: BookQueryOptions): Promise<Book[]> {
 
     query = applyFilters(query, options);
 
-    // Apply sorting with secondary keys for deterministic ordering
+    // Apply sorting — only price sorts reach here; others are client-side
     switch (sortBy) {
-      case 'newest':
-        query = query
-          .order('publication_date', { ascending: false, nullsFirst: false })
-          .order('title', { ascending: true });
-        break;
-      case 'author':
-        query = query
-          .order('author_last', { ascending: true, nullsFirst: false })
-          .order('title', { ascending: true });
-        break;
       case 'price-asc':
         query = query
           .order('price', { ascending: true })
@@ -235,9 +227,20 @@ export async function getBooks(options?: BookQueryOptions): Promise<Book[]> {
 }
 
 /**
+ * Extract last name from an author string as a sort fallback.
+ * "Matt Haig" → "haig", "J.K. Rowling" → "rowling"
+ */
+function extractLastName(author: string): string {
+  const parts = author.trim().split(/\s+/);
+  return (parts[parts.length - 1] || '').toLowerCase();
+}
+
+/**
  * Fetch books with client-side sorting and pagination.
- * Used for alphabetical sort which needs article stripping ("The", "A", "An")
- * so page boundaries are correct.
+ * Used for sorts that need application-level logic the DB can't handle:
+ *   - alphabetical: article stripping ("The", "A", "An")
+ *   - author: last-name extraction when author_last column is NULL
+ *   - newest: created_at fallback when publication_date is NULL
  */
 async function getClientSortedBooks(options?: BookQueryOptions): Promise<Book[]> {
   try {
@@ -254,12 +257,35 @@ async function getClientSortedBooks(options?: BookQueryOptions): Promise<Book[]>
 
     if (!data || data.length === 0) return [];
 
+    const sortBy = options?.sortBy || 'alphabetical';
+
+    // Sort raw DB records for sorts that need fields not in the Book type
+    if (sortBy === 'newest') {
+      data.sort((a: SupabaseBook, b: SupabaseBook) => {
+        const dateA = a.publication_date || a.created_at;
+        const dateB = b.publication_date || b.created_at;
+        if (dateA > dateB) return -1;
+        if (dateA < dateB) return 1;
+        return sortKeyForTitle(a.title).localeCompare(sortKeyForTitle(b.title));
+      });
+    } else if (sortBy === 'author') {
+      data.sort((a: SupabaseBook, b: SupabaseBook) => {
+        const lastA = a.author_last?.toLowerCase() || extractLastName(a.author);
+        const lastB = b.author_last?.toLowerCase() || extractLastName(b.author);
+        const cmp = lastA.localeCompare(lastB);
+        if (cmp !== 0) return cmp;
+        return sortKeyForTitle(a.title).localeCompare(sortKeyForTitle(b.title));
+      });
+    }
+
     let books = data.map(mapSupabaseBookToBook);
 
     books = filterExpiredLimitedPreorders(books);
 
-    // Alphabetical with article stripping
-    books.sort((a, b) => sortKeyForTitle(a.title).localeCompare(sortKeyForTitle(b.title)));
+    // Alphabetical sorts after mapping so article stripping works on split titles
+    if (sortBy === 'alphabetical') {
+      books.sort((a, b) => sortKeyForTitle(a.title).localeCompare(sortKeyForTitle(b.title)));
+    }
 
     if (options?.hideStaleHardcovers) {
       books = await filterStaleHardcovers(books);

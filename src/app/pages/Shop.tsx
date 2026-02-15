@@ -267,33 +267,44 @@ export const Shop = () => {
     return options;
   }, [currentPage, itemsPerPage, searchQuery, activeCategory, activeGenre, activeFormat, sortBy, newestTab, priceRange, availabilityFilters]);
 
-  // Load books from Supabase with pagination
-  const loadBooks = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const filterOptions = buildFilterOptions();
-
-      // Fetch books and count in parallel
-      const [fetchedBooks, count] = await Promise.all([
-        getBooks(filterOptions),
-        getBooksCount(filterOptions)
-      ]);
-
-      setBooks(fetchedBooks);
-      setTotalItems(count);
-    } catch (error) {
-      console.error('Failed to fetch books:', error);
-      setBooks([]);
-      setTotalItems(0);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [buildFilterOptions]);
-
-  // Load books when filters or pagination changes
+  // Load books from Supabase with pagination.
+  // Uses a stale-request guard so that if filters change rapidly,
+  // only the most recent fetch updates state.
   useEffect(() => {
+    let cancelled = false;
+
+    async function loadBooks() {
+      setIsLoading(true);
+      try {
+        const filterOptions = buildFilterOptions();
+
+        // Fetch books and count in parallel
+        const [fetchedBooks, count] = await Promise.all([
+          getBooks(filterOptions),
+          getBooksCount(filterOptions)
+        ]);
+
+        if (!cancelled) {
+          setBooks(fetchedBooks);
+          setTotalItems(count);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to fetch books:', error);
+          setBooks([]);
+          setTotalItems(0);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
     loadBooks();
-  }, [loadBooks]);
+
+    return () => { cancelled = true; };
+  }, [buildFilterOptions]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
