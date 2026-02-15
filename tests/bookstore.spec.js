@@ -124,6 +124,126 @@ test.describe('Search', () => {
   });
 });
 
+test.describe('Sorting', () => {
+  test('sort dropdown is visible', async ({ page }) => {
+    await page.goto('/');
+    const sortSelect = page.locator('#book-sort');
+    await expect(sortSelect).toBeVisible();
+  });
+
+  test('sorts books alphabetically (ignoring articles)', async ({ page }) => {
+    await page.goto('/');
+    await page.selectOption('#book-sort', 'alphabetical');
+    const titles = await page.locator('#catalog .book-card .book-title').allTextContents();
+    // "1984" should come first, "And Then There Were None" second, "Atomic Habits" third
+    expect(titles[0]).toBe('1984');
+    expect(titles[1]).toBe('And Then There Were None');
+    expect(titles[2]).toBe('Atomic Habits');
+  });
+
+  test('sorts books by author last name', async ({ page }) => {
+    await page.goto('/');
+    await page.selectOption('#book-sort', 'author');
+    const authors = await page.locator('#catalog .book-card .book-author').allTextContents();
+    // "Adams" should come first, "Austen" second, "Christie" third
+    expect(authors[0]).toContain('Douglas Adams');
+    expect(authors[1]).toContain('Jane Austen');
+    expect(authors[2]).toContain('Agatha Christie');
+  });
+
+  test('sorts books by price low to high', async ({ page }) => {
+    await page.goto('/');
+    await page.selectOption('#book-sort', 'price-asc');
+    const prices = await page.locator('#catalog .book-card .book-price').allTextContents();
+    const priceValues = prices.map(p => parseFloat(p.replace('$', '')));
+    for (let i = 1; i < priceValues.length; i++) {
+      expect(priceValues[i]).toBeGreaterThanOrEqual(priceValues[i - 1]);
+    }
+  });
+
+  test('sorts books by price high to low', async ({ page }) => {
+    await page.goto('/');
+    await page.selectOption('#book-sort', 'price-desc');
+    const prices = await page.locator('#catalog .book-card .book-price').allTextContents();
+    const priceValues = prices.map(p => parseFloat(p.replace('$', '')));
+    for (let i = 1; i < priceValues.length; i++) {
+      expect(priceValues[i]).toBeLessThanOrEqual(priceValues[i - 1]);
+    }
+  });
+
+  test('sorts books by newest first', async ({ page }) => {
+    await page.goto('/');
+    await page.selectOption('#book-sort', 'newest');
+    const cards = page.locator('#catalog .book-card');
+    const firstTitle = await cards.first().locator('.book-title').textContent();
+    // The newest books (2021) should appear first
+    expect(['Project Hail Mary', 'Klara and the Sun']).toContain(firstTitle);
+  });
+
+  test('sorting works with genre filter applied', async ({ page }) => {
+    await page.goto('/');
+    await page.click('[data-filter="sci-fi"]');
+    await page.selectOption('#book-sort', 'price-asc');
+    const prices = await page.locator('#catalog .book-card .book-price').allTextContents();
+    const priceValues = prices.map(p => parseFloat(p.replace('$', '')));
+    for (let i = 1; i < priceValues.length; i++) {
+      expect(priceValues[i]).toBeGreaterThanOrEqual(priceValues[i - 1]);
+    }
+  });
+
+  test('resetting sort to default restores original order', async ({ page }) => {
+    await page.goto('/');
+    const originalTitles = await page.locator('#catalog .book-card .book-title').allTextContents();
+    await page.selectOption('#book-sort', 'alphabetical');
+    await page.selectOption('#book-sort', 'default');
+    const restoredTitles = await page.locator('#catalog .book-card .book-title').allTextContents();
+    expect(restoredTitles).toEqual(originalTitles);
+  });
+});
+
+test.describe('Preorder & Status', () => {
+  test('shows preorder status badge on preorder books', async ({ page }) => {
+    await page.goto('/');
+    // Klara and the Sun has preorder status
+    await page.fill('#book-search', 'Klara');
+    await page.waitForTimeout(300);
+    const card = page.locator('#catalog .book-card').first();
+    const statusBadge = card.locator('.book-status');
+    await expect(statusBadge).toBeVisible();
+    await expect(statusBadge).toContainText('Preorder');
+  });
+
+  test('shows preorder button for preorder books', async ({ page }) => {
+    await page.goto('/');
+    await page.fill('#book-search', 'Klara');
+    await page.waitForTimeout(300);
+    const preorderBtn = page.locator('#catalog .book-card .add-to-cart--preorder');
+    await expect(preorderBtn).toBeVisible();
+    await expect(preorderBtn).toContainText('Preorder');
+  });
+
+  test('modal shows preorder cutoff info', async ({ page }) => {
+    await page.goto('/');
+    await page.fill('#book-search', 'Klara');
+    await page.waitForTimeout(300);
+    await page.locator('#catalog .book-card').first().click();
+    const modalStatus = page.locator('#modal-status');
+    await expect(modalStatus).toBeVisible();
+    await expect(modalStatus).toContainText('Preorder');
+    await expect(modalStatus).toContainText('Preorder by');
+  });
+
+  test('preorder book can be added to cart', async ({ page }) => {
+    await page.goto('/');
+    await page.fill('#book-search', 'Klara');
+    await page.waitForTimeout(300);
+    await page.locator('#catalog .add-to-cart--preorder').click();
+    await expect(page.locator('.cart-count')).toHaveText('1');
+    const toast = page.locator('.toast');
+    await expect(toast).toContainText('preordered');
+  });
+});
+
 test.describe('Shopping Cart', () => {
   test('opens cart sidebar when cart button is clicked', async ({ page }) => {
     await page.goto('/');
